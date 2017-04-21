@@ -177,22 +177,16 @@ all(Fun, List) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> bool()
 all(Fun, List, Malt) ->
-    try runmany(fun (L) ->
-			B = lists:all(Fun, L),
-			if B ->
-				nil;
-			   true ->
-				exit(notall)
-			end
-		end,
-		fun (_A1, _A2) ->
+    try
+	runmany(fun(L) ->
+			lists:all(Fun, L) orelse exit(notall),
 			nil
 		end,
-		List, Malt) of
-	_ ->
-	    true
-    catch exit:notall ->
-		  false
+		fun(_A1, _A2) -> nil end,
+		List, Malt),
+	true
+    catch
+	exit:notall -> false
     end.
 
 % @doc Same semantics as in module
@@ -205,22 +199,16 @@ any(Fun, List) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> bool()
 any(Fun, List, Malt) ->
-    try runmany(fun (L) ->
-			B = lists:any(Fun, L),
-			if B ->
-				exit(any);
-			   true ->
-				nil
-			end
-		end,
-		fun (_A1, _A2) ->
+    try
+	runmany(fun(L) ->
+			lists:any(Fun, L) andalso exit(any),
 			nil
 		end,
-		List, Malt) of
-	_ ->
-	    false
-    catch exit:any ->
-	    true
+		fun(_A1, _A2) -> nil end,
+		List, Malt),
+	false
+    catch
+	exit:any -> true
     end.
 
 % @doc Same semantics as in module
@@ -233,12 +221,8 @@ filter(Fun, List) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> list()
 filter(Fun, List, Malt) ->
-    runmany(fun (L) ->
-		    lists:filter(Fun, L)
-	    end,
-	    {reverse, fun (A1, A2) ->
-		    A1 ++ A2
-	    end},
+    runmany(fun(L) -> lists:filter(Fun, L) end,
+	    {reverse, fun erlang:'++'/2},
 	    List, Malt).
 
 % Note that with parallel fold there is not foldl and foldr,
@@ -274,8 +258,7 @@ fold(Fun, InitAcc, List, Malt) ->
 % possible recursive fuse.
 % @spec (Fun, Fuse, InitAcc, List, Malt) -> term()
 fold(Fun, Fuse, InitAcc, List, Malt) ->
-    Fun2 = fun (L) -> lists:foldl(Fun, InitAcc, L) end,
-    runmany(Fun2, Fuse, List, Malt).
+    runmany(fun(L) -> lists:foldl(Fun, InitAcc, L) end, Fuse, List, Malt).
 
 % @doc Similiar to foreach in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>
@@ -289,12 +272,8 @@ foreach(Fun, List) ->
 % except it makes no guarantee about the order it processes list elements.
 % @spec (Fun, List, Malt) -> void()
 foreach(Fun, List, Malt) ->
-    runmany(fun (L) ->
-		    lists:foreach(Fun, L)
-	    end,
-	    fun (_A1, _A2) ->
-		    ok
-	    end,
+    runmany(fun(L) -> lists:foreach(Fun, L) end,
+	    fun(_A1, _A2) -> ok end,
 	    List, Malt).
 
 % @doc Same semantics as in module
@@ -307,13 +286,7 @@ map(Fun, List) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> list()
 map(Fun, List, Malt) ->
-    runmany(fun (L) ->
-		    lists:map(Fun, L)
-	    end,
-	    {reverse, fun (A1, A2) ->
-		    A1 ++ A2
-	    end},
-	    List, Malt).
+    runmany(fun(L) -> lists:map(Fun, L) end, {reverse, fun erlang:'++'/2}, List, Malt).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
@@ -325,12 +298,8 @@ partition(Fun, List) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> {list(), list()}
 partition(Fun, List, Malt) ->
-    runmany(fun (L) ->
-		    lists:partition(Fun, L)
-	    end,
-	    {reverse, fun ({True1, False1}, {True2, False2}) ->
-		    {True1 ++ True2, False1 ++ False2}
-	    end},
+    runmany(fun(L) -> lists:partition(Fun, L) end,
+	    {reverse, fun ({True1, False1}, {True2, False2}) -> {True1 ++ True2, False1 ++ False2} end},
 	    List, Malt).
 
 % SORTMALT needs to be tuned
@@ -340,10 +309,7 @@ partition(Fun, List, Malt) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (List) -> list()
 sort(List) ->
-    sort(fun (A, B) ->
-		 A =< B
-	 end,
-	 List).
+    sort(fun erlang:'=<'/2, List).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
@@ -360,22 +326,13 @@ sort(Fun, List) ->
 % 100-element sublists.
 % @spec (Fun, List, Malt) -> list()
 sort(Fun, List, Malt) ->
-    Fun2 = fun (L) ->
-	    lists:sort(Fun, L)
-    end,
-    Fuse = fun (A1, A2) ->
-	    lists:merge(Fun, A1, A2)
-    end,
-    runmany(Fun2, {recursive, Fuse}, List, Malt).
+    runmany(fun(L) -> lists:sort(Fun, L) end, {recursive, fun(A1, A2) -> lists:merge(Fun, A1, A2) end}, List, Malt).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (List) -> list()
 usort(List) ->
-    usort(fun (A, B) ->
-		 A =< B
-	 end,
-	 List).
+    usort(fun erlang:'=<'/2, List).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
@@ -394,13 +351,7 @@ usort(Fun, List) ->
 % usort removes duplicate elments while it sorts.
 % @spec (Fun, List, Malt) -> list()
 usort(Fun, List, Malt) ->
-    Fun2 = fun (L) ->
-	    lists:usort(Fun, L)
-    end,
-    Fuse = fun (A1, A2) ->
-	    lists:umerge(Fun, A1, A2)
-    end,
-    runmany(Fun2, {recursive, Fuse}, List, Malt).
+    runmany(fun(L) -> lists:usort(Fun, L) end, {recursive, fun(A1, A2) -> lists:umerge(Fun, A1, A2) end}, List, Malt).
 
 % @doc Like below, assumes default MapMalt of 1.
 % @spec (MapFunc, List) -> Dict
@@ -438,15 +389,14 @@ mapreduce(MapFunc, List, MapMalt) ->
 % ReduceFunc = (OldState::term(), Key::term(), Value::term() -> NewState::term()
 mapreduce(MapFunc, List, InitState, ReduceFunc, MapMalt) ->
     Parent = self(),
-    {Reducer, ReducerRef} =
-	erlang:spawn_monitor(fun () ->
-				     reducer(Parent, 0, InitState, ReduceFunc)
-			     end),
-    MapFunc2 = fun (L) ->
-		       Reducer ! lists:map(MapFunc, L),
-		       1
-	       end,
-    SentMessages = try runmany(MapFunc2, fun (A, B) -> A+B end, List, MapMalt)
+    {Reducer, ReducerRef} = erlang:spawn_monitor(fun() -> reducer(Parent, 0, InitState, ReduceFunc) end),
+    SentMessages = try
+		       runmany(fun(L) ->
+				   Reducer ! lists:map(MapFunc, L),
+				   1
+			       end,
+			       fun erlang:'+'/2,
+			       List, MapMalt)
 		   catch
 		       exit:Reason ->
 			   erlang:demonitor(ReducerRef, [flush]),
@@ -455,25 +405,19 @@ mapreduce(MapFunc, List, InitState, ReduceFunc, MapMalt) ->
 		   end,
     Reducer ! {mappers, done, SentMessages},
     Results = receive
-		  {Reducer, Results2} ->
-		      Results2;
-		  {'DOWN', _, _, Reducer, Reason2} ->
-		      exit(Reason2)
+		  {Reducer, Results2} -> Results2;
+		  {'DOWN', _, _, Reducer, Reason2} -> exit(Reason2)
 	      end,
     receive
-	{'DOWN', _, _, Reducer, normal} ->
-	    nil
+	{'DOWN', _, _, Reducer, normal} -> nil
     end,
     Results.
 
 reducer(Parent, NumReceived, State, Func) ->
     receive
-	die ->
-	    nil;
-	{mappers, done, NumReceived} ->
-	    Parent ! {self (), State};
-	Keys  ->
-	    reducer(Parent, NumReceived + 1, each_key(State, Func, Keys), Func)
+	die -> nil;
+	{mappers, done, NumReceived} -> Parent ! {self (), State};
+	Keys  -> reducer(Parent, NumReceived + 1, each_key(State, Func, Keys), Func)
     end.
 
 each_key(State, Func, {Key, Value}) ->
@@ -485,10 +429,8 @@ each_key(State, _, []) ->
 
 add_key(Dict, Key, Value) ->
     case dict:is_key(Key, Dict) of
-	true ->
-	    dict:append(Key, Value, Dict);
-	false ->
-	    dict:store(Key, [Value], Dict)
+	true -> dict:append(Key, Value, Dict);
+	false -> dict:store(Key, [Value], Dict)
     end.
 
 % @doc Like below, but assumes a Malt of 1,
@@ -541,21 +483,20 @@ runmany(Fun, Fuse, List, Nodes, no_split, [MaltTerm|Malt]) when is_integer(MaltT
     runmany(Fun, Fuse, List, Nodes, MaltTerm, Malt);
 % run a process for each scheduler
 runmany(Fun, Fuse, List, local, Split, [{processes, schedulers}|Malt]) ->
-    S = erlang:system_info(schedulers),
-    runmany(Fun, Fuse, List, local, Split, [{processes, S}|Malt]);
+    runmany(Fun, Fuse, List, local, Split, [{processes, erlang:system_info(schedulers)}|Malt]);
 % Split the list into X sublists, where X is the number of processes
-runmany(Fun, Fuse, List, local, no_split, [{processes, X}|_]=Malt) ->
+runmany(Fun, Fuse, List, local, no_split, [{processes, X}|_] = Malt) ->
     L = length(List),
-    case L rem X of
-	0 ->
-	    runmany(Fun, Fuse, List, local, L div X, Malt);
-	_ ->
-	    runmany(Fun, Fuse, List, local, L div X + 1, Malt)
-    end;
+    R = L div X,
+    runmany(Fun, Fuse, List, local,
+	    if
+		L rem X =:= 0 -> R;
+		true -> R + 1
+	    end,
+	    Malt);
 % run X process on local machine
 runmany(Fun, Fuse, List, local, Split, [{processes, X}|Malt]) ->
-    Nodes = lists:duplicate(X, node()),
-    runmany(Fun, Fuse, List, Nodes, Split, Malt);
+    runmany(Fun, Fuse, List, lists:duplicate(X, node()), Split, Malt);
 runmany(Fun, Fuse, List, Nodes, Split, [{timeout, X}|Malt]) ->
     Parent = self(),
     Timer = spawn(fun () ->
@@ -570,28 +511,24 @@ runmany(Fun, Fuse, List, Nodes, Split, [{timeout, X}|Malt]) ->
 				  end
 			  end
 		  end),
-    Ans = try runmany(Fun, Fuse, List, Nodes, Split, Malt)
-	  catch
-	      % we really just want the after block, the syntax
-	      % makes this catch necessary.
-	      willneverhappen ->
-		  nil
-	  after
-	    Timer ! stoptimer,
-	    cleanup_timer(Timer)
-	  end,
-    Ans;
+    try
+	runmany(Fun, Fuse, List, Nodes, Split, Malt)
+    catch
+	% we really just want the after block, the syntax makes this catch necessary.
+	willneverhappen -> nil
+    after Timer ! stoptimer,
+	cleanup_timer(Timer)
+    end;
 runmany(Fun, Fuse, List, local, Split, [{nodes, NodeList}|Malt]) ->
-    Nodes = lists:foldl(fun ({Node, schedulers}, A) ->
-				X = schedulers_on_node(Node) + 1,
-				lists:reverse(lists:duplicate(X, Node), A);
-			    ({Node, X}, A) ->
-				lists:reverse(lists:duplicate(X, Node), A);
-			    (Node, A) ->
-				[Node|A]
-			end,
-			[], NodeList),
-    runmany(Fun, Fuse, List, Nodes, Split, Malt);
+    runmany(Fun, Fuse, List,
+	    lists:foldl(fun({Node, X}, A) ->
+			    lists:duplicate(if
+						X =:= schedulers -> schedulers_on_node(Node) + 1;
+						true -> X
+					    end, Node) ++ A;
+			   (Node, A) -> [Node|A]
+			end, [], NodeList),
+	    Split, Malt);
 % local recursive fuse, for when we weren't invoked with {processes, X}
 % or {nodes, NodeList}. Degenerates recursive fuse into linear fuse.
 runmany(Fun, {recursive, Fuse}, List, local, Split, []) ->
@@ -600,189 +537,133 @@ runmany(Fun, {recursive, Fuse}, List, local, Split, []) ->
 runmany(Fun, Fuse, List, Nodes, no_split, []) ->
     runmany(Fun, Fuse, List, Nodes, 1, []);
 runmany(Fun, Fuse, List, local, Split, []) ->
-    List2 = splitmany(List, Split),
-    local_runmany(Fun, Fuse, List2);
+    local_runmany(Fun, Fuse, splitmany(List, Split));
 runmany(Fun, Fuse, List, Nodes, Split, []) ->
-    List2 = splitmany(List, Split),
-    cluster_runmany(Fun, Fuse, List2, Nodes).
+    cluster_runmany(Fun, Fuse, splitmany(List, Split), Nodes).
 
 cleanup_timer(Timer) ->
     receive
-	{timerrang, Timer} ->
-	    cleanup_timer(Timer);
-	{timerstopped, Timer} ->
-	    nil
+	{timerrang, Timer} -> cleanup_timer(Timer);
+	{timerstopped, Timer} -> nil
     end.
 
 schedulers_on_node(Node) ->
     case get(plists_schedulers_on_nodes) of
 	undefined ->
 	    X = determine_schedulers(Node),
-	    put(plists_schedulers_on_nodes,
-		dict:store(Node, X, dict:new())),
+	    put(plists_schedulers_on_nodes, dict:store(Node, X, dict:new())),
 	    X;
-	Dict ->
-	    case dict:is_key(Node, Dict) of
-		true ->
-		    dict:fetch(Node, Dict);
-		false ->
-		    X = determine_schedulers(Node),
-		    put(plists_schedulers_on_nodes,
-			dict:store(Node, X, Dict)),
-		    X
-	    end
+	Dict -> case dict:is_key(Node, Dict) of
+		    true -> dict:fetch(Node, Dict);
+		    false ->
+			X = determine_schedulers(Node),
+			put(plists_schedulers_on_nodes, dict:store(Node, X, Dict)),
+			X
+		end
     end.
 
 determine_schedulers(Node) ->
     Parent = self(),
-    Child = spawn(Node, fun () ->
-		  Parent ! {self(), erlang:system_info(schedulers)}
-	  end),
+    Child = spawn(Node, fun() -> Parent ! {self(), erlang:system_info(schedulers)} end),
     erlang:monitor(process, Child),
     receive
 	{Child, X} ->
 	    receive
-		{'DOWN', _, _, Child, _Reason} ->
-		    nil
+		{'DOWN', _, _, Child, _Reason} -> nil
 	    end,
 	    X;
-	{'DOWN', _, _, Child, Reason} when Reason =/= normal ->
-	    0
+	{'DOWN', _, _, Child, Reason} when Reason =/= normal -> 0
     end.
 
 % local runmany, for when we weren't invoked with {processes, X}
 % or {nodes, NodeList}. Every sublist is processed in parallel.
 local_runmany(Fun, Fuse, List) ->
-    Parent = self (),
-    Pids = lists:map(fun (L) ->
-			     F = fun () ->
-					 Parent !
-					     {self (), Fun(L)}
-				 end,
-			     {Pid, _} = erlang:spawn_monitor(F),
-			     Pid
-		     end,
-		     List),
-    Answers = try lists:map(fun receivefrom/1, Pids)
-	      catch throw:Message ->
-		      {BadPid, Reason} = Message,
-		      handle_error(BadPid, Reason, Pids)
+    Parent = self(),
+    Pids = [begin
+	    {Pid, _} = erlang:spawn_monitor(fun() -> Parent ! {self (), Fun(L)} end),
+	    Pid
+	    end || L <- List],
+    Answers = try
+		  [receivefrom(Pid) || Pid <- Pids]
+	      catch
+		  throw:{BadPid, Reason} -> handle_error(BadPid, Reason, Pids)
 	      end,
-    lists:foreach(fun (Pid) ->
-			  normal_cleanup(Pid)
-		  end, Pids),
+    lists:foreach(fun normal_cleanup/1, Pids),
     fuse(Fuse, Answers).
 
 receivefrom(Pid) ->
     receive
-	{Pid, R} ->
-	    R;
-	{'DOWN', _, _, BadPid, Reason} when Reason =/= normal ->
-	    throw({BadPid, Reason});
-	{timerrang, _} ->
-	    throw({nil, timeout})
+	{Pid, R} -> R;
+	{'DOWN', _, _, BadPid, Reason} when Reason =/= normal -> throw({BadPid, Reason});
+	{timerrang, _} -> throw({nil, timeout})
     end.
 
 % Convert List into [{Number, Sublist}]
 cluster_runmany(Fun, Fuse, List, Nodes) ->
-    {List2, _} = lists:foldl(fun (X, {L, Count}) ->
-				{[{Count, X}|L], Count+1}
-			end,
-			{[], 0}, List),
+    {List2, _} = lists:foldl(fun(X, {L, Count}) -> {[{Count, X}|L], Count + 1} end, {[], 0}, List),
     cluster_runmany(Fun, Fuse, List2, Nodes, [], []).
 
 % Add a pair of results into the TaskList as a fusing task
-cluster_runmany(Fun, {recursive, Fuse}, [], Nodes, Running,
-		[{_, R1}, {_, R2}|Results]) ->
-    cluster_runmany(Fun, {recursive, Fuse}, [{fuse, R1, R2}], Nodes,
-		    Running, Results);
+cluster_runmany(Fun, {recursive, _Fuse} = F, [], Nodes, Running, [{_, R1}, {_, R2}|Results]) ->
+    cluster_runmany(Fun, F, [{fuse, R1, R2}], Nodes, Running, Results);
 % recursive fuse done, return result
-cluster_runmany(_, {recursive, _Fuse}, [], _Nodes, [], [{_, Result}]) ->
-    Result;
+cluster_runmany(_, {recursive, _Fuse}, [], _Nodes, [], [{_, Result}]) -> Result;
 % edge case where we are asked to do nothing
-cluster_runmany(_, {recursive, _Fuse}, [], _Nodes, [], []) ->
-    [];
+cluster_runmany(_, {recursive, _Fuse}, [], _Nodes, [], []) -> [];
 % We're done, now we just have to [linear] fuse the results
 cluster_runmany(_, Fuse, [], _Nodes, [], Results) ->
-    fuse(Fuse, lists:map(fun ({_, R}) -> R end,
-			 lists:sort(fun ({A, _}, {B, _}) ->
-					    A =< B
-				    end,
-				    lists:reverse(Results))));
+    fuse(Fuse, [R || {_, R} <- lists:keysort(1, lists:reverse(Results))]);
 % We have a ready node and a sublist or fuse to be processed, so we start
 % a new process
 cluster_runmany(Fun, Fuse, [Task|TaskList], [N|Nodes], Running, Results) ->
     Parent = self(),
-    case Task of
-	{Num, L2} ->
-	    Fun2 = fun () ->
-			   Parent ! {self(), Num, Fun(L2)}
-		   end;
-	{fuse, R1, R2} ->
-	    {recursive, FuseFunc} = Fuse,
-	    Fun2 = fun () ->
-			   Parent ! {self(), fuse, FuseFunc(R1, R2)}
-		   end
-    end,
-    Fun3 = fun () ->
-		   try Fun2()
-		   catch
-		         exit:siblingdied ->
-			   ok;
-			 exit:Reason ->
-			   Parent ! {self(), error, Reason};
-			 error:R ->
-			   Parent ! {self(), error, {R, erlang:get_stacktrace()}};
-			 throw:R ->
-			   Parent ! {self(), error, {{nocatch, R}, erlang:get_stacktrace()}}
-			 end
+    Fun2 = case Task of
+	       {Num, L2} -> fun() -> Parent ! {self(), Num, Fun(L2)} end;
+	       {fuse, R1, R2} ->
+		   {recursive, FuseFunc} = Fuse,
+		   fun() -> Parent ! {self(), fuse, FuseFunc(R1, R2)} end
 	   end,
-    Pid = spawn(N, Fun3),
+    Pid = spawn(N, fun() ->
+		       try
+			   Fun2()
+		       catch
+			   exit:siblingdied -> ok;
+			   exit:Reason -> Parent ! {self(), error, Reason};
+			   error:R -> Parent ! {self(), error, {R, erlang:get_stacktrace()}};
+			   throw:R -> Parent ! {self(), error, {{nocatch, R}, erlang:get_stacktrace()}}
+		       end
+		   end),
     erlang:monitor(process, Pid),
     cluster_runmany(Fun, Fuse, TaskList, Nodes, [{Pid, N, Task}|Running], Results);
 % We can't start a new process, but can watch over already running ones
 cluster_runmany(Fun, Fuse, TaskList, Nodes, Running, Results) when length(Running) > 0 ->
     receive
 	{_Pid, error, Reason} ->
-	    RunningPids = lists:map(fun ({Pid, _, _}) ->
-					    Pid
-				    end,
-				    Running),
-	    handle_error(junkvalue, Reason, RunningPids);
+	    handle_error(junkvalue, Reason, [Pid || {Pid, _, _} <- Running]);
 	{Pid, Num, Result} ->
 	    % throw out the exit message, Reason should be
 	    % normal, noproc, or noconnection
-	    receive {'DOWN', _, _, Pid, _Reason} ->
-		    nil
+	    receive
+		{'DOWN', _, _, Pid, _Reason} -> nil
 	    end,
 	    {Running2, FinishedNode, _} = delete_running(Pid, Running, []),
-	    cluster_runmany(Fun, Fuse, TaskList,
-			    [FinishedNode|Nodes], Running2, [{Num, Result}|Results]);
+	    cluster_runmany(Fun, Fuse, TaskList, [FinishedNode|Nodes], Running2, [{Num, Result}|Results]);
 	{timerrang, _} ->
-	    RunningPids = lists:map(fun ({Pid, _, _}) ->
-					    Pid
-				    end,
-				    Running),
-	    handle_error(nil, timeout, RunningPids);
+	    handle_error(nil, timeout, [Pid || {Pid, _, _} <- Running]);
 	% node failure
 	{'DOWN', _, _, Pid, noconnection} ->
 	    {Running2, _DeadNode, Task} = delete_running(Pid, Running, []),
-	    cluster_runmany(Fun, Fuse, [Task|TaskList], Nodes,
-			    Running2, Results);
+	    cluster_runmany(Fun, Fuse, [Task|TaskList], Nodes, Running2, Results);
 	% could a noproc exit message come before the message from
 	% the process? we are assuming it can't.
 	% this clause is unlikely to get invoked due to cluster_runmany's
         % spawned processes. It will still catch errors in mapreduce's
         % reduce process, however.
 	{'DOWN', _, _, BadPid, Reason} when Reason =/= normal ->
-	    RunningPids = lists:map(fun ({Pid, _, _}) ->
-					    Pid
-				    end,
-				    Running),
-	    handle_error(BadPid, Reason, RunningPids)
+	    handle_error(BadPid, Reason, [Pid || {Pid, _, _} <- Running])
     end;
 % We have data, but no nodes either available or occupied
-cluster_runmany(_, _, [_Non|_Empty], []=_Nodes, []=_Running, _) ->
+cluster_runmany(_, _, [_Non|_Empty], [] = _Nodes, [] = _Running, _) ->
     exit(allnodescrashed).
 
 delete_running(Pid, [{Pid, Node, List}|Running], Acc) ->
@@ -791,36 +672,28 @@ delete_running(Pid, [R|Running], Acc) ->
     delete_running(Pid, Running, [R|Acc]).
 
 handle_error(BadPid, Reason, Pids) ->
-    lists:foreach(fun (Pid) ->
-			  exit(Pid, siblingdied)
-		  end, Pids),
-    lists:foreach(fun (Pid) ->
-			  error_cleanup(Pid, BadPid)
-		  end, Pids),
+    lists:foreach(fun(Pid) -> exit(Pid, siblingdied) end, Pids),
+    lists:foreach(fun(Pid) -> error_cleanup(Pid, BadPid) end, Pids),
     exit(Reason).
 
 error_cleanup(BadPid, BadPid) ->
     ok;
 error_cleanup(Pid, BadPid) ->
     receive
-	{Pid, _} ->
-	    error_cleanup(Pid, BadPid);
-	{Pid, _, _} ->
-	    error_cleanup(Pid, BadPid);
-	{'DOWN', _, _, Pid, _Reason} ->
-	    ok
+	{Pid, _} -> error_cleanup(Pid, BadPid);
+	{Pid, _, _} -> error_cleanup(Pid, BadPid);
+	{'DOWN', _, _, Pid, _Reason} -> ok
     end.
 
 normal_cleanup(Pid) ->
     receive
-	{'DOWN', _, _, Pid, _Reason} ->
-	    ok
+	{'DOWN', _, _, Pid, _Reason} -> ok
     end.
 
 % edge case
 fuse(_, []) ->
     [];
-fuse({reverse, _}=Fuse, Results) ->
+fuse({reverse, _} = Fuse, Results) ->
     [RL|ResultsR] = lists:reverse(Results),
     fuse(Fuse, ResultsR, RL);
 fuse(Fuse, [R1|Results]) ->
