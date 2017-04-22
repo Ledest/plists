@@ -545,7 +545,7 @@ schedulers_on_node(Node) ->
     case get(plists_schedulers_on_nodes) of
 	undefined ->
 	    X = determine_schedulers(Node),
-	    put(plists_schedulers_on_nodes, dict:store(Node, X, dict:new())),
+	    put(plists_schedulers_on_nodes, dict:from_list([{Node, X}])),
 	    X;
 	Dict -> case dict:find(Node, Dict) of
 		    {ok, X} -> X;
