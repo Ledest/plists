@@ -156,13 +156,20 @@
 % OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 % THE SOFTWARE.
 
-
 -module(plists).
--export([all/2, all/3, any/2, any/3, filter/2, filter/3,
-fold/3, fold/4, fold/5, foreach/2, foreach/3, map/2, map/3,
-partition/2, partition/3, sort/1, sort/2, sort/3,
-usort/1, usort/2, usort/3, mapreduce/2, mapreduce/3, mapreduce/5,
-runmany/3, runmany/4]).
+
+-export([all/2, all/3,
+	 any/2, any/3,
+	 filter/2, filter/3,
+	 filtermap/2, filtermap/3,
+	 fold/3, fold/4, fold/5,
+	 foreach/2, foreach/3,
+	 map/2, map/3,
+	 partition/2, partition/3,
+	 sort/1, sort/2, sort/3,
+	 usort/1, usort/2, usort/3,
+	 mapreduce/2, mapreduce/3, mapreduce/5,
+	 runmany/3, runmany/4]).
 
 % Everything here is defined in terms of runmany.
 % The following methods are convient interfaces to runmany.
@@ -222,6 +229,20 @@ filter(Fun, List) ->
 % @spec (Fun, List, Malt) -> list()
 filter(Fun, List, Malt) ->
     runmany(fun(L) -> lists:filter(Fun, L) end,
+	    {reverse, fun erlang:'++'/2},
+	    List, Malt).
+
+% @doc Same semantics as in module
+% <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
+% @spec (Fun, List) -> list()
+filtermap(Fun, List) ->
+    filtermap(Fun, List, 1).
+
+% @doc Same semantics as in module
+% <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
+% @spec (Fun, List, Malt) -> list()
+filtermap(Fun, List, Malt) ->
+    runmany(fun(L) -> lists:filtermap(Fun, L) end,
 	    {reverse, fun erlang:'++'/2},
 	    List, Malt).
 
