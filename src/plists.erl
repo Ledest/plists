@@ -428,10 +428,7 @@ each_key(State, _, []) ->
     State.
 
 add_key(Dict, Key, Value) ->
-    case dict:is_key(Key, Dict) of
-	true -> dict:append(Key, Value, Dict);
-	false -> dict:store(Key, [Value], Dict)
-    end.
+    dict:append(Key, Value, Dict).
 
 % @doc Like below, but assumes a Malt of 1,
 % meaning each element of the list is processed by a seperate process.
