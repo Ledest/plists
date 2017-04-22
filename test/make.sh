@@ -1,5 +1,5 @@
 #!/bin/sh
-erl -sname first_node@localhost \
+erl -sname plists_test_$(date +%H%M%S)@localhost \
 -run file set_cwd .. \
 -run make all \
 -run file set_cwd test \
