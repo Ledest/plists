@@ -547,9 +547,9 @@ schedulers_on_node(Node) ->
 	    X = determine_schedulers(Node),
 	    put(plists_schedulers_on_nodes, dict:store(Node, X, dict:new())),
 	    X;
-	Dict -> case dict:is_key(Node, Dict) of
-		    true -> dict:fetch(Node, Dict);
-		    false ->
+	Dict -> case dict:find(Node, Dict) of
+		    {ok, X} -> X;
+		    error ->
 			X = determine_schedulers(Node),
 			put(plists_schedulers_on_nodes, dict:store(Node, X, Dict)),
 			X
