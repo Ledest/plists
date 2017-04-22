@@ -366,7 +366,7 @@ mapreduce(MapFunc, List) ->
 % with values {Key, [Value1, Value2...]}.
 % This dict is returned as the result.
 mapreduce(MapFunc, List, MapMalt) ->
-    mapreduce(MapFunc, List, dict:new(), fun add_key/3, MapMalt).
+    mapreduce(MapFunc, List, dict:new(), fun(Dict, Key, Value) -> dict:append(Key, Value, Dict) end, MapMalt).
 
 % @doc This is a very basic mapreduce. You won't write a Google-rivaling
 % search engine with it. It has no equivalent in lists. Each
@@ -426,9 +426,6 @@ each_key(State, Func, [List|Keys]) ->
     each_key(each_key(State, Func, List), Func, Keys);
 each_key(State, _, []) ->
     State.
-
-add_key(Dict, Key, Value) ->
-    dict:append(Key, Value, Dict).
 
 % @doc Like below, but assumes a Malt of 1,
 % meaning each element of the list is processed by a seperate process.
