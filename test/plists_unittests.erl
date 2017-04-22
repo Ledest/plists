@@ -108,13 +108,9 @@ test_mapreduce(Malt) ->
     false = lists:any(fun (X) -> lists:member(X, List3) end, [1,2,3,6]),
     Text = "how many of each letter",
     TextAns = plists:mapreduce(fun (X) -> {X, 1} end, Text, Malt),
-    TextAns2 = dict:from_list(lists:map(fun ({X, List}) ->
-						{X, lists:sum(List)} end,
-			     dict:to_list(TextAns))),
-    3 = dict:fetch($e, TextAns2),
-    2 = dict:fetch($h, TextAns2),
-    1 = dict:fetch($m, TextAns2).
-    
+    TextAns2 = dict:map(fun(_X, List) -> lists:sum(List) end, TextAns),
+    lists:foreach(fun({X, Y}) -> X = dict:fetch(Y, TextAns2) end, [{3, $e}, {2, $h}, {1, $m}]).
+
 test_all(Malt) ->
     true = plists:all(fun even/1, [2,4,6,8], Malt),
     false = plists:all(fun even/1, [2,4,5,8], Malt).
