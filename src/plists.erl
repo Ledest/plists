@@ -330,7 +330,7 @@ partition(Fun, List, Malt) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (List) -> list()
 sort(List) ->
-    sort(fun erlang:'=<'/2, List).
+    runmany(fun lists:sort/1, {recursive, fun lists:merge/2}, List, ?SORTMALT).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
@@ -353,7 +353,7 @@ sort(Fun, List, Malt) ->
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (List) -> list()
 usort(List) ->
-    usort(fun erlang:'=<'/2, List).
+    runmany(fun lists:usort/1, {recursive, fun lists:umerge/2}, List, ?SORTMALT).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.

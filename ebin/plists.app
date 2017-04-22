@@ -1,5 +1,5 @@
 {application, plists, [{description, "lists module replacement for making most list operations parallel"},
-                       {vsn, "0.0.2"},
+                       {vsn, "0.1.0"},
                        {registered, []},
                        {applications, [kernel, stdlib]},
                        {modules, [plists]},
