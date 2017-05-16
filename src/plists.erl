@@ -159,17 +159,17 @@
 -module(plists).
 
 -export([all/2, all/3,
-	 any/2, any/3,
-	 filter/2, filter/3,
-	 filtermap/2, filtermap/3,
-	 fold/3, fold/4, fold/5,
-	 foreach/2, foreach/3,
-	 map/2, map/3,
-	 partition/2, partition/3,
-	 sort/1, sort/2, sort/3,
-	 usort/1, usort/2, usort/3,
-	 mapreduce/2, mapreduce/3, mapreduce/5,
-	 runmany/3, runmany/4]).
+         any/2, any/3,
+         filter/2, filter/3,
+         filtermap/2, filtermap/3,
+         fold/3, fold/4, fold/5,
+         foreach/2, foreach/3,
+         map/2, map/3,
+         partition/2, partition/3,
+         sort/1, sort/2, sort/3,
+         usort/1, usort/2, usort/3,
+         mapreduce/2, mapreduce/3, mapreduce/5,
+         runmany/3, runmany/4]).
 
 % Everything here is defined in terms of runmany.
 % The following methods are convient interfaces to runmany.
@@ -177,74 +177,64 @@
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> bool()
-all(Fun, List) ->
-    all(Fun, List, 1).
+all(Fun, List) -> all(Fun, List, 1).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> bool()
 all(Fun, List, Malt) ->
     try
-	runmany(fun(L) ->
-			lists:all(Fun, L) orelse exit(notall),
-			nil
-		end,
-		fun(_A1, _A2) -> nil end,
-		List, Malt),
-	true
+        runmany(fun(L) ->
+                    lists:all(Fun, L) orelse exit(notall),
+                    nil
+                end,
+                fun(_A1, _A2) -> nil end,
+                List, Malt),
+        true
     catch
-	exit:notall -> false
+        exit:notall -> false
     end.
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> bool()
-any(Fun, List) ->
-    any(Fun, List, 1).
+any(Fun, List) -> any(Fun, List, 1).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> bool()
 any(Fun, List, Malt) ->
     try
-	runmany(fun(L) ->
-			lists:any(Fun, L) andalso exit(any),
-			nil
-		end,
-		fun(_A1, _A2) -> nil end,
-		List, Malt),
-	false
+        runmany(fun(L) ->
+                    lists:any(Fun, L) andalso exit(any),
+                    nil
+                end,
+                fun(_A1, _A2) -> nil end,
+                List, Malt),
+        false
     catch
-	exit:any -> true
+        exit:any -> true
     end.
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> list()
-filter(Fun, List) ->
-    filter(Fun, List, 1).
+filter(Fun, List) -> filter(Fun, List, 1).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> list()
-filter(Fun, List, Malt) ->
-    runmany(fun(L) -> lists:filter(Fun, L) end,
-	    {reverse, fun erlang:'++'/2},
-	    List, Malt).
+filter(Fun, List, Malt) -> runmany(fun(L) -> lists:filter(Fun, L) end, {reverse, fun erlang:'++'/2}, List, Malt).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> list()
-filtermap(Fun, List) ->
-    filtermap(Fun, List, 1).
+filtermap(Fun, List) -> filtermap(Fun, List, 1).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> list()
-filtermap(Fun, List, Malt) ->
-    runmany(fun(L) -> lists:filtermap(Fun, L) end,
-	    {reverse, fun erlang:'++'/2},
-	    List, Malt).
+filtermap(Fun, List, Malt) -> runmany(fun(L) -> lists:filtermap(Fun, L) end, {reverse, fun erlang:'++'/2}, List, Malt).
 
 % Note that with parallel fold there is not foldl and foldr,
 % instead just one fold that can fuse Accumlators.
@@ -252,13 +242,11 @@ filtermap(Fun, List, Malt) ->
 % @doc Like below, but assumes 1 as the Malt. This function is almost useless,
 % and is intended only to aid converting code from using lists to plists.
 % @spec (Fun, InitAcc, List) -> term()
-fold(Fun, InitAcc, List) ->
-    fold(Fun, Fun, InitAcc, List, 1).
+fold(Fun, InitAcc, List) -> fold(Fun, Fun, InitAcc, List, 1).
 
 % @doc Like below, but uses the Fun as the Fuse by default.
 % @spec (Fun, InitAcc, List, Malt) -> term()
-fold(Fun, InitAcc, List, Malt) ->
-    fold(Fun, Fun, InitAcc, List, Malt).
+fold(Fun, InitAcc, List, Malt) -> fold(Fun, Fun, InitAcc, List, Malt).
 
 % @doc fold is more complex when made parallel. There is no foldl and foldr,
 % accumulators aren't passed in any defined order.
@@ -278,50 +266,42 @@ fold(Fun, InitAcc, List, Malt) ->
 % Malt is the malt for the initial folding of sublists, and for the
 % possible recursive fuse.
 % @spec (Fun, Fuse, InitAcc, List, Malt) -> term()
-fold(Fun, Fuse, InitAcc, List, Malt) ->
-    runmany(fun(L) -> lists:foldl(Fun, InitAcc, L) end, Fuse, List, Malt).
+fold(Fun, Fuse, InitAcc, List, Malt) -> runmany(fun(L) -> lists:foldl(Fun, InitAcc, L) end, Fuse, List, Malt).
 
 % @doc Similiar to foreach in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>
 % except it makes no guarantee about the order it processes list elements.
 % @spec (Fun, List) -> void()
-foreach(Fun, List) ->
-    foreach(Fun, List, 1).
+foreach(Fun, List) -> foreach(Fun, List, 1).
 
 % @doc Similiar to foreach in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>
 % except it makes no guarantee about the order it processes list elements.
 % @spec (Fun, List, Malt) -> void()
-foreach(Fun, List, Malt) ->
-    runmany(fun(L) -> lists:foreach(Fun, L) end,
-	    fun(_A1, _A2) -> ok end,
-	    List, Malt).
+foreach(Fun, List, Malt) -> runmany(fun(L) -> lists:foreach(Fun, L) end, fun(_A1, _A2) -> ok end, List, Malt).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> list()
-map(Fun, List) ->
-    map(Fun, List, 1).
+map(Fun, List) -> map(Fun, List, 1).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> list()
-map(Fun, List, Malt) ->
-    runmany(fun(L) -> lists:map(Fun, L) end, {reverse, fun erlang:'++'/2}, List, Malt).
+map(Fun, List, Malt) -> runmany(fun(L) -> lists:map(Fun, L) end, {reverse, fun erlang:'++'/2}, List, Malt).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> {list(), list()}
-partition(Fun, List) ->
-    partition(Fun, List, 1).
+partition(Fun, List) -> partition(Fun, List, 1).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List, Malt) -> {list(), list()}
 partition(Fun, List, Malt) ->
     runmany(fun(L) -> lists:partition(Fun, L) end,
-	    {reverse, fun ({True1, False1}, {True2, False2}) -> {True1 ++ True2, False1 ++ False2} end},
-	    List, Malt).
+            {reverse, fun({True1, False1}, {True2, False2}) -> {True1 ++ True2, False1 ++ False2} end},
+            List, Malt).
 
 % SORTMALT needs to be tuned
 -define(SORTMALT, 100).
@@ -329,14 +309,12 @@ partition(Fun, List, Malt) ->
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (List) -> list()
-sort(List) ->
-    runmany(fun lists:sort/1, {recursive, fun lists:merge/2}, List, ?SORTMALT).
+sort(List) -> runmany(fun lists:sort/1, {recursive, fun lists:merge/2}, List, ?SORTMALT).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> list()
-sort(Fun, List) ->
-    sort(Fun, List, ?SORTMALT).
+sort(Fun, List) -> sort(Fun, List, ?SORTMALT).
 
 % @doc This version lets you specify your own malt for sort.
 %
@@ -352,14 +330,12 @@ sort(Fun, List, Malt) ->
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (List) -> list()
-usort(List) ->
-    runmany(fun lists:usort/1, {recursive, fun lists:umerge/2}, List, ?SORTMALT).
+usort(List) -> runmany(fun lists:usort/1, {recursive, fun lists:umerge/2}, List, ?SORTMALT).
 
 % @doc Same semantics as in module
 % <a href="http://www.erlang.org/doc/man/lists.html">lists</a>.
 % @spec (Fun, List) -> list()
-usort(Fun, List) ->
-    usort(Fun, List, ?SORTMALT).
+usort(Fun, List) -> usort(Fun, List, ?SORTMALT).
 
 % @doc This version lets you specify your own malt for usort.
 %
@@ -378,8 +354,7 @@ usort(Fun, List, Malt) ->
 % @spec (MapFunc, List) -> Dict
 % MapFunc = (term()) -> DeepListOfKeyValuePairs
 % DeepListOfKeyValuePairs = [DeepListOfKeyValuePairs] | {Key, Value}
-mapreduce(MapFunc, List) ->
-    mapreduce(MapFunc, List, 1).
+mapreduce(MapFunc, List) -> mapreduce(MapFunc, List, 1).
 
 % Like below, but uses a default reducer that collects all
 % {Key, Value} pairs into a
@@ -411,48 +386,42 @@ mapreduce(MapFunc, List, MapMalt) ->
 mapreduce(MapFunc, List, InitState, ReduceFunc, MapMalt) ->
     Parent = self(),
     {Reducer, ReducerRef} = erlang:spawn_monitor(fun() -> reducer(Parent, 0, InitState, ReduceFunc) end),
-    SentMessages = try
-		       runmany(fun(L) ->
-				   Reducer ! lists:map(MapFunc, L),
-				   1
-			       end,
-			       fun erlang:'+'/2,
-			       List, MapMalt)
-		   catch
-		       exit:Reason ->
-			   erlang:demonitor(ReducerRef, [flush]),
-			   Reducer ! die,
-			   exit(Reason)
-		   end,
-    Reducer ! {mappers, done, SentMessages},
+    Reducer ! {mappers, done, try
+                                  runmany(fun(L) ->
+                                              Reducer ! lists:map(MapFunc, L),
+                                              1
+                                          end,
+                                          fun erlang:'+'/2, List, MapMalt)
+                              catch
+                                  exit:Reason ->
+                                      erlang:demonitor(ReducerRef, [flush]),
+                                      Reducer ! die,
+                                      exit(Reason)
+                              end},
     Results = receive
-		  {Reducer, Results2} -> Results2;
-		  {'DOWN', _, _, Reducer, Reason2} -> exit(Reason2)
-	      end,
+                  {Reducer, Results2} -> Results2;
+                  {'DOWN', _, _, Reducer, Reason2} -> exit(Reason2)
+              end,
     receive
-	{'DOWN', _, _, Reducer, normal} -> nil
+        {'DOWN', _, _, Reducer, normal} -> nil
     end,
     Results.
 
 reducer(Parent, NumReceived, State, Func) ->
     receive
-	die -> nil;
-	{mappers, done, NumReceived} -> Parent ! {self (), State};
-	Keys  -> reducer(Parent, NumReceived + 1, each_key(State, Func, Keys), Func)
+        die -> nil;
+        {mappers, done, NumReceived} -> Parent ! {self(), State};
+        Keys  -> reducer(Parent, NumReceived + 1, each_key(State, Func, Keys), Func)
     end.
 
-each_key(State, Func, {Key, Value}) ->
-    Func(State, Key, Value);
-each_key(State, Func, [List|Keys]) ->
-    each_key(each_key(State, Func, List), Func, Keys);
-each_key(State, _, []) ->
-    State.
+each_key(State, Func, {Key, Value}) -> Func(State, Key, Value);
+each_key(State, Func, [List|Keys]) -> each_key(each_key(State, Func, List), Func, Keys);
+each_key(State, _, []) -> State.
 
 % @doc Like below, but assumes a Malt of 1,
 % meaning each element of the list is processed by a seperate process.
 % @spec (Fun, Fuse, List) -> term()
-runmany(Fun, Fuse, List) ->
-    runmany(Fun, Fuse, List, 1).
+runmany(Fun, Fuse, List) -> runmany(Fun, Fuse, List, 1).
 
 % Begin internal stuff (though runmany/4 is exported).
 
@@ -489,10 +458,8 @@ runmany(Fun, Fuse, List) ->
 % Fun = (list()) -> term()
 % Fuse = FuseFunc | {recursive, FuseFunc}
 % FuseFunc = (term(), term()) -> term()
-runmany(Fun, Fuse, List, Malt) when is_list(Malt) ->
-    runmany(Fun, Fuse, List, local, no_split, Malt);
-runmany(Fun, Fuse, List, Malt) ->
-    runmany(Fun, Fuse, List, [Malt]).
+runmany(Fun, Fuse, List, Malt) when is_list(Malt) -> runmany(Fun, Fuse, List, local, no_split, Malt);
+runmany(Fun, Fuse, List, Malt) -> runmany(Fun, Fuse, List, [Malt]).
 
 runmany(Fun, Fuse, List, Nodes, no_split, [MaltTerm|Malt]) when is_integer(MaltTerm) ->
     runmany(Fun, Fuse, List, Nodes, MaltTerm, Malt);
@@ -501,93 +468,80 @@ runmany(Fun, Fuse, List, local, Split, [{processes, schedulers}|Malt]) ->
     runmany(Fun, Fuse, List, local, Split, [{processes, erlang:system_info(schedulers)}|Malt]);
 % Split the list into X sublists, where X is the number of processes
 runmany(Fun, Fuse, List, local, no_split, [{processes, X}|_] = Malt) ->
-    L = length(List),
-    R = L div X,
-    runmany(Fun, Fuse, List, local,
-	    if
-		L rem X =:= 0 -> R;
-		true -> R + 1
-	    end,
-	    Malt);
+    runmany(Fun, Fuse, List, local, (length(List) + X - 1) div X, Malt);
 % run X process on local machine
 runmany(Fun, Fuse, List, local, Split, [{processes, X}|Malt]) ->
     runmany(Fun, Fuse, List, lists:duplicate(X, node()), Split, Malt);
 runmany(Fun, Fuse, List, Nodes, Split, [{timeout, X}|Malt]) ->
     Parent = self(),
-    Timer = spawn(fun () ->
-			  receive
-			      stoptimer ->
-				  Parent ! {timerstopped, self()}
-			  after X ->
-				  Parent ! {timerrang, self()},
-				  receive
-				      stoptimer ->
-					  Parent ! {timerstopped, self()}
-				  end
-			  end
-		  end),
+    Timer = spawn(fun() ->
+                      receive
+                          stoptimer -> Parent ! {timerstopped, self()}
+                      after X ->
+                          Parent ! {timerrang, self()},
+                          receive
+                              stoptimer -> Parent ! {timerstopped, self()}
+                          end
+                      end
+                  end),
     try
-	runmany(Fun, Fuse, List, Nodes, Split, Malt)
+        runmany(Fun, Fuse, List, Nodes, Split, Malt)
     catch
-	% we really just want the after block, the syntax makes this catch necessary.
-	willneverhappen -> nil
+        % we really just want the after block, the syntax makes this catch necessary.
+        willneverhappen -> nil
     after Timer ! stoptimer,
-	cleanup_timer(Timer)
+        cleanup_timer(Timer)
     end;
 runmany(Fun, Fuse, List, local, Split, [{nodes, NodeList}|Malt]) ->
     runmany(Fun, Fuse, List,
-	    lists:foldl(fun({Node, X}, A) ->
-			    lists:duplicate(if
-						X =:= schedulers -> schedulers_on_node(Node) + 1;
-						true -> X
-					    end, Node) ++ A;
-			   (Node, A) -> [Node|A]
-			end, [], NodeList),
-	    Split, Malt);
+            lists:foldl(fun({Node, X}, A) ->
+                            lists:duplicate(if
+                                                X =:= schedulers -> schedulers_on_node(Node) + 1;
+                                                true -> X
+                                            end, Node) ++ A;
+                           (Node, A) -> [Node|A]
+                        end, [], NodeList),
+            Split, Malt);
 % local recursive fuse, for when we weren't invoked with {processes, X}
 % or {nodes, NodeList}. Degenerates recursive fuse into linear fuse.
-runmany(Fun, {recursive, Fuse}, List, local, Split, []) ->
-    runmany(Fun, Fuse, List, local, Split, []);
+runmany(Fun, {recursive, Fuse}, List, local, Split, []) -> runmany(Fun, Fuse, List, local, Split, []);
 % by default, operate on each element seperately
-runmany(Fun, Fuse, List, Nodes, no_split, []) ->
-    runmany(Fun, Fuse, List, Nodes, 1, []);
-runmany(Fun, Fuse, List, local, Split, []) ->
-    local_runmany(Fun, Fuse, splitmany(List, Split));
-runmany(Fun, Fuse, List, Nodes, Split, []) ->
-    cluster_runmany(Fun, Fuse, splitmany(List, Split), Nodes).
+runmany(Fun, Fuse, List, Nodes, no_split, []) -> runmany(Fun, Fuse, List, Nodes, 1, []);
+runmany(Fun, Fuse, List, local, Split, []) -> local_runmany(Fun, Fuse, splitmany(List, Split, []));
+runmany(Fun, Fuse, List, Nodes, Split, []) -> cluster_runmany(Fun, Fuse, splitmany(List, Split, []), Nodes).
 
 cleanup_timer(Timer) ->
     receive
-	{timerrang, Timer} -> cleanup_timer(Timer);
-	{timerstopped, Timer} -> nil
+        {timerrang, Timer} -> cleanup_timer(Timer);
+        {timerstopped, Timer} -> nil
     end.
 
 schedulers_on_node(Node) ->
     case get(plists_schedulers_on_nodes) of
-	undefined ->
-	    X = determine_schedulers(Node),
-	    put(plists_schedulers_on_nodes, dict:from_list([{Node, X}])),
-	    X;
-	Dict -> case dict:find(Node, Dict) of
-		    {ok, X} -> X;
-		    error ->
-			X = determine_schedulers(Node),
-			put(plists_schedulers_on_nodes, dict:store(Node, X, Dict)),
-			X
-		end
+        undefined ->
+            X = determine_schedulers(Node),
+            put(plists_schedulers_on_nodes, dict:from_list([{Node, X}])),
+            X;
+        Dict -> case dict:find(Node, Dict) of
+                    {ok, X} -> X;
+                    error ->
+                        X = determine_schedulers(Node),
+                        put(plists_schedulers_on_nodes, dict:store(Node, X, Dict)),
+                        X
+                end
     end.
+-compile({inline, [schedulers_on_node/1]}).
 
 determine_schedulers(Node) ->
     Parent = self(),
     Child = spawn(Node, fun() -> Parent ! {self(), erlang:system_info(schedulers)} end),
     erlang:monitor(process, Child),
     receive
-	{Child, X} ->
-	    receive
-		{'DOWN', _, _, Child, _Reason} -> nil
-	    end,
-	    X;
-	{'DOWN', _, _, Child, Reason} when Reason =/= normal -> 0
+        {Child, X} -> receive
+                          {'DOWN', _, _, Child, _Reason} -> nil
+                      end,
+                      X;
+        {'DOWN', _, _, Child, Reason} when Reason =/= normal -> 0
     end.
 
 % local runmany, for when we weren't invoked with {processes, X}
@@ -595,23 +549,24 @@ determine_schedulers(Node) ->
 local_runmany(Fun, Fuse, List) ->
     Parent = self(),
     Pids = [begin
-	    {Pid, _} = erlang:spawn_monitor(fun() -> Parent ! {self (), Fun(L)} end),
-	    Pid
-	    end || L <- List],
+            {Pid, _} = erlang:spawn_monitor(fun() -> Parent ! {self(), Fun(L)} end),
+            Pid
+            end || L <- List],
     Answers = try
-		  [receivefrom(Pid) || Pid <- Pids]
-	      catch
-		  throw:{BadPid, Reason} -> handle_error(BadPid, Reason, Pids)
-	      end,
-    lists:foreach(fun normal_cleanup/1, Pids),
+                  [receive
+                       {Pid, R} -> R;
+                       {'DOWN', _, _, BadPid, Reason} when Reason =/= normal -> throw({BadPid, Reason});
+                       {timerrang, _} -> throw({nil, timeout})
+                   end || Pid <- Pids]
+              catch
+                  throw:{BadPid, Reason} -> handle_error(BadPid, Reason, Pids)
+              end,
+    lists:foreach(fun(Pid) ->
+                      receive
+                          {'DOWN', _, _, Pid, _Reason} -> ok
+                      end
+                  end, Pids),
     fuse(Fuse, Answers).
-
-receivefrom(Pid) ->
-    receive
-	{Pid, R} -> R;
-	{'DOWN', _, _, BadPid, Reason} when Reason =/= normal -> throw({BadPid, Reason});
-	{timerrang, _} -> throw({nil, timeout})
-    end.
 
 % Convert List into [{Number, Sublist}]
 cluster_runmany(Fun, Fuse, List, Nodes) ->
@@ -633,114 +588,89 @@ cluster_runmany(_, Fuse, [], _Nodes, [], Results) ->
 cluster_runmany(Fun, Fuse, [Task|TaskList], [N|Nodes], Running, Results) ->
     Parent = self(),
     Fun2 = case Task of
-	       {Num, L2} -> fun() -> Parent ! {self(), Num, Fun(L2)} end;
-	       {fuse, R1, R2} ->
-		   {recursive, FuseFunc} = Fuse,
-		   fun() -> Parent ! {self(), fuse, FuseFunc(R1, R2)} end
-	   end,
+               {Num, L2} -> fun() -> Parent ! {self(), Num, Fun(L2)} end;
+               {fuse, R1, R2} ->
+                   {recursive, FuseFunc} = Fuse,
+                   fun() -> Parent ! {self(), fuse, FuseFunc(R1, R2)} end
+           end,
     Pid = spawn(N, fun() ->
-		       try
-			   Fun2()
-		       catch
-			   exit:siblingdied -> ok;
-			   exit:Reason -> Parent ! {self(), error, Reason};
-			   error:R -> Parent ! {self(), error, {R, erlang:get_stacktrace()}};
-			   throw:R -> Parent ! {self(), error, {{nocatch, R}, erlang:get_stacktrace()}}
-		       end
-		   end),
+                       try
+                           Fun2()
+                       catch
+                           exit:siblingdied -> ok;
+                           exit:Reason -> Parent ! {self(), error, Reason};
+                           error:R -> Parent ! {self(), error, {R, erlang:get_stacktrace()}};
+                           throw:R -> Parent ! {self(), error, {{nocatch, R}, erlang:get_stacktrace()}}
+                       end
+                   end),
     erlang:monitor(process, Pid),
     cluster_runmany(Fun, Fuse, TaskList, Nodes, [{Pid, N, Task}|Running], Results);
 % We can't start a new process, but can watch over already running ones
-cluster_runmany(Fun, Fuse, TaskList, Nodes, Running, Results) when length(Running) > 0 ->
+cluster_runmany(Fun, Fuse, TaskList, Nodes, [_|_] = Running, Results) ->
     receive
-	{_Pid, error, Reason} ->
-	    handle_error(junkvalue, Reason, [Pid || {Pid, _, _} <- Running]);
-	{Pid, Num, Result} ->
-	    % throw out the exit message, Reason should be
-	    % normal, noproc, or noconnection
-	    receive
-		{'DOWN', _, _, Pid, _Reason} -> nil
-	    end,
-	    {Running2, FinishedNode, _} = delete_running(Pid, Running, []),
-	    cluster_runmany(Fun, Fuse, TaskList, [FinishedNode|Nodes], Running2, [{Num, Result}|Results]);
-	{timerrang, _} ->
-	    handle_error(nil, timeout, [Pid || {Pid, _, _} <- Running]);
-	% node failure
-	{'DOWN', _, _, Pid, noconnection} ->
-	    {Running2, _DeadNode, Task} = delete_running(Pid, Running, []),
-	    cluster_runmany(Fun, Fuse, [Task|TaskList], Nodes, Running2, Results);
-	% could a noproc exit message come before the message from
-	% the process? we are assuming it can't.
-	% this clause is unlikely to get invoked due to cluster_runmany's
-        % spawned processes. It will still catch errors in mapreduce's
-        % reduce process, however.
-	{'DOWN', _, _, BadPid, Reason} when Reason =/= normal ->
-	    handle_error(BadPid, Reason, [Pid || {Pid, _, _} <- Running])
+        {_Pid, error, Reason} -> handle_error(junkvalue, Reason, [Pid || {Pid, _, _} <- Running]);
+        {Pid, Num, Result} ->
+            % throw out the exit message, Reason should be normal, noproc, or noconnection
+            receive
+                {'DOWN', _, _, Pid, _Reason} -> nil
+            end,
+            {Running2, FinishedNode, _} = delete_running(Pid, Running, []),
+            cluster_runmany(Fun, Fuse, TaskList, [FinishedNode|Nodes], Running2, [{Num, Result}|Results]);
+        {timerrang, _} -> handle_error(nil, timeout, [Pid || {Pid, _, _} <- Running]);
+        % node failure
+        {'DOWN', _, _, Pid, noconnection} ->
+            {Running2, _DeadNode, Task} = delete_running(Pid, Running, []),
+            cluster_runmany(Fun, Fuse, [Task|TaskList], Nodes, Running2, Results);
+        % could a noproc exit message come before the message from the process? we are assuming it can't.
+        % this clause is unlikely to get invoked due to cluster_runmany's spawned processes.
+        % It will still catch errors in mapreduce's reduce process, however.
+        {'DOWN', _, _, BadPid, Reason} when Reason =/= normal ->
+            handle_error(BadPid, Reason, [Pid || {Pid, _, _} <- Running])
     end;
 % We have data, but no nodes either available or occupied
-cluster_runmany(_, _, [_Non|_Empty], [] = _Nodes, [] = _Running, _) ->
-    exit(allnodescrashed).
+cluster_runmany(_, _, [_|_], [], [], _) -> exit(allnodescrashed).
 
-delete_running(Pid, [{Pid, Node, List}|Running], Acc) ->
-    {Running ++ Acc, Node, List};
-delete_running(Pid, [R|Running], Acc) ->
-    delete_running(Pid, Running, [R|Acc]).
+delete_running(Pid, [{Pid, Node, List}|Running], Acc) -> {Running ++ Acc, Node, List};
+delete_running(Pid, [R|Running], Acc) -> delete_running(Pid, Running, [R|Acc]).
 
 handle_error(BadPid, Reason, Pids) ->
     lists:foreach(fun(Pid) -> exit(Pid, siblingdied) end, Pids),
     lists:foreach(fun(Pid) -> error_cleanup(Pid, BadPid) end, Pids),
     exit(Reason).
 
-error_cleanup(BadPid, BadPid) ->
-    ok;
+error_cleanup(BadPid, BadPid) -> ok;
 error_cleanup(Pid, BadPid) ->
     receive
-	{Pid, _} -> error_cleanup(Pid, BadPid);
-	{Pid, _, _} -> error_cleanup(Pid, BadPid);
-	{'DOWN', _, _, Pid, _Reason} -> ok
-    end.
-
-normal_cleanup(Pid) ->
-    receive
-	{'DOWN', _, _, Pid, _Reason} -> ok
+        {Pid, _} -> error_cleanup(Pid, BadPid);
+        {Pid, _, _} -> error_cleanup(Pid, BadPid);
+        {'DOWN', _, _, Pid, _Reason} -> ok
     end.
 
 % edge case
-fuse(_, []) ->
-    [];
-fuse({reverse, _} = Fuse, Results) ->
-    [RL|ResultsR] = lists:reverse(Results),
-    fuse(Fuse, ResultsR, RL);
-fuse(Fuse, [R1|Results]) ->
-    fuse(Fuse, Results, R1).
+fuse(_, []) -> [];
+fuse(Fuse, Results) ->
+    [RH|RT] = case Fuse of
+                   {reverse, _} -> lists:reverse(Results);
+                   _ -> Results
+              end,
+    fuse(Fuse, RT, RH).
 
-fuse({reverse, FuseFunc}=Fuse, [R2|Results], R1) ->
-    fuse(Fuse, Results, FuseFunc(R2, R1));
 fuse(Fuse, [R2|Results], R1) ->
-    fuse(Fuse, Results, Fuse(R1, R2));
-fuse(_, [], R) ->
-    R.
+    fuse(Fuse, Results, case Fuse of
+                            {reverse, FuseFunc} -> FuseFunc(R2, R1);
+                            _ -> Fuse(R1, R2)
+                        end);
+fuse(_, [], R) -> R.
 
 % Splits a list into a list of sublists, each of size Size,
 % except for the last element which is less if the original list
 % could not be evenly divided into Size-sized lists.
-splitmany(List, Size) ->
-    splitmany(List, [], Size).
-
-splitmany([], Acc, _) ->
-    lists:reverse(Acc);
-splitmany(List, Acc, Size) ->
-    {Top, NList} = split(Size, List),
-    splitmany(NList, [Top|Acc], Size).
+splitmany([], _, Acc) -> lists:reverse(Acc);
+splitmany(List, Size, Acc) ->
+    {Top, NList} = split(List, Size, []),
+    splitmany(NList, Size, [Top|Acc]).
 
 % Like lists:split, except it splits a list smaller than its first
 % parameter
-split(Size, List) ->
-    split(Size, List, []).
-
-split(0, List, Acc) ->
-    {lists:reverse(Acc), List};
-split(Size, [H|List], Acc) ->
-    split(Size - 1, List, [H|Acc]);
-split(_, [], Acc) ->
-    {lists:reverse(Acc), []}.
+split([H|List], Size, Acc) when Size =/= 0 -> split(List, Size - 1, [H|Acc]);
+split(List, _, Acc) -> {lists:reverse(Acc), List}.
